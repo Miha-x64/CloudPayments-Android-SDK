@@ -1,20 +1,20 @@
 package ru.cloudpayments.sdk.cp_card.api.models;
 
-import com.google.gson.annotations.SerializedName;
+import org.json.JSONObject;
 
 public class BinInfo {
 
-    @SerializedName("LogoUrl")
-    private String logoUrl;
+    private final JSONObject obj;
 
-    @SerializedName("BankName")
-    private String bankName;
+    public BinInfo(JSONObject obj) {
+        this.obj = obj;
+    }
 
     public String getLogoUrl() {
-        return logoUrl;
+        return obj.optString("LogoUrl", null);
     }
 
     public String getBankName() {
-        return bankName;
+        return obj.optString("BankName", null);
     }
 }

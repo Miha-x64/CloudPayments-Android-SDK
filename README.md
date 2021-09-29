@@ -1,5 +1,9 @@
 # CloudPayments SDK for Android 
 
+## This fork
+* no Gson dependency
+____________________
+
 CloudPayments SDK позволяет интегрировать прием платежей в мобильные приложение для платформы Android.
 
 ### Схема работы мобильного приложения:

@@ -8,11 +8,10 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import ru.cloudpayments.sdk.cp_card.api.models.BinInfo;
-import ru.cloudpayments.sdk.cp_card.api.models.BinInfoResponse;
 
 public class CPCardApi {
 
@@ -27,17 +26,9 @@ public class CPCardApi {
     }
 
     private final Context context;
-    private final Gson gson;
 
     public CPCardApi(Context context) {
         this.context = context;
-        this.gson = createGson();
-    }
-
-    private Gson createGson() {
-        return new GsonBuilder()
-                .setLenient()
-                .create();
     }
 
     public void getBinInfo(String firstSixDigits, final CompleteBinInfoListener completeListener, final ErrorListener errorListener) {
@@ -58,15 +49,21 @@ public class CPCardApi {
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-
-                        BinInfoResponse binInfoResponse = gson.fromJson(response, BinInfoResponse.class);
-
-                        if (binInfoResponse.isSuccess() && binInfoResponse.getBinInfo() != null) {
-                            completeListener.onCompleted(binInfoResponse.getBinInfo());
-                        } else {
+                        JSONObject jsonInfo = null;
+                        try {
+                            JSONObject jsonResp;
+                            Object resp = new JSONTokener(response).nextValue();
+                            if (resp instanceof JSONObject &&
+                                (jsonResp = (JSONObject) resp).optBoolean("Success", false) &&
+                                (jsonInfo = jsonResp.optJSONObject("Model")) != null) {
+                                completeListener.onCompleted(new BinInfo(jsonInfo));
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        if (jsonInfo == null) {
                             errorListener.onError("Unable to determine bank");
                         }
-
                     }
                 }, new Response.ErrorListener() {
             @Override
