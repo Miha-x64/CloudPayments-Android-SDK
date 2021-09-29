@@ -3,6 +3,9 @@
 ## This fork
 * no Gson dependency
 * no Jsoup dependency
+* No required dependency on Volley.
+  You're free to choose whether to use Volley, OkHttp, or neither, and don't ever request bin-code data.
+* Fragment result API support
 ____________________
 
 CloudPayments SDK позволяет интегрировать прием платежей в мобильные приложение для платформы Android.

@@ -24,12 +24,18 @@ public class ThreeDsDialogFragment extends DialogFragment {
 
     private ThreeDSDialogListener listener;
 
-    public static ThreeDsDialogFragment newInstance(String acsUrl, String md, String paReq) {
-        ThreeDsDialogFragment dialogFragment = new ThreeDsDialogFragment();
-        Bundle args = new Bundle(1);
+    @Deprecated public ThreeDsDialogFragment() {
+    }
+
+    public ThreeDsDialogFragment(String acsUrl, String md, String paReq, String requestKey) {
+        Bundle args = new Bundle(2);
         args.putStringArray("args", new String[]{ acsUrl, md, paReq });
-        dialogFragment.setArguments(args);
-        return dialogFragment;
+        args.putString("rk", requestKey);
+        setArguments(args);
+    }
+
+    public static ThreeDsDialogFragment newInstance(String acsUrl, String md, String paReq) {
+        return new ThreeDsDialogFragment(acsUrl, md, paReq, null);
     }
 
     static WebView view(Activity activity, String acsUrl, String md, String paReq, ThreeDSDialogListener listener) {
@@ -54,8 +60,40 @@ public class ThreeDsDialogFragment extends DialogFragment {
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        String[] args = requireArguments().getStringArray("args");
-        return ThreeDs.dialog(requireActivity(), args[0], args[1], args[2], listener);
+        Bundle bun = requireArguments();
+        String[] args = bun.getStringArray("args");
+        String rk = bun.getString("rk");
+        return ThreeDs.dialog(
+            requireActivity(),
+            args[0], args[1], args[2],
+            rk == null ? listener : new ThreeDSDialogListener() {
+                @Override public void onAuthorizationCompleted(String md, String paRes) {
+                    deliver(md, paRes, null);
+                    if (listener != null) listener.onAuthorizationCompleted(md, paRes);
+                }
+                @Override public void onAuthorizationFailed(String html) {
+                    deliver(null, null, html == null || html.length() > 128 * 1024 ? null : html);
+                    //                                just a safe guess ^^^^^^^^^^
+                    if (listener != null) listener.onAuthorizationFailed(html);
+                }
+                private void deliver(String md, String paRes, String html) {
+                    Bundle bun = new Bundle(2);
+                    if (md != null) {
+                        bun.putString("md", md);
+                        bun.putString("paRes", paRes);
+                    } else if (html != null) {
+                        bun.putString("html", html);
+                    } // else error HTML was truncated
+
+                    if (isAdded()) {
+                        getParentFragmentManager().setFragmentResult(rk, bun);
+                        // and a decorator from ThreeDs.dialog() will dismiss us
+                    } else {
+                        requireArguments().putBundle("result", bun);
+                    }
+                }
+            }
+        );
     }
 
     @Override
@@ -64,6 +102,13 @@ public class ThreeDsDialogFragment extends DialogFragment {
         Window window = getDialog().getWindow();
         if (window != null) {
             window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        }
+
+        Bundle args = requireArguments();
+        Bundle result = args.getBundle("result");
+        if (result != null) {
+            getParentFragmentManager().setFragmentResult(args.getString("rk"), result);
+            dismiss();
         }
     }
 
