@@ -2,6 +2,7 @@
 
 ## This fork
 * no Gson dependency
+* no Jsoup dependency
 ____________________
 
 CloudPayments SDK позволяет интегрировать прием платежей в мобильные приложение для платформы Android.

@@ -8,23 +8,16 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-
 import androidx.fragment.app.DialogFragment;
-
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
+import org.json.JSONException;
+import org.json.JSONTokener;
+import ru.cloudpayments.sdk.R;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-
-import ru.cloudpayments.sdk.R;
 
 public class ThreeDsDialogFragment extends DialogFragment {
 
@@ -68,11 +61,10 @@ public class ThreeDsDialogFragment extends DialogFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.dialog_fragment_three_ds, container, false);
         webViewThreeDs = view.findViewById(R.id.web_view_three_ds);
-        webViewThreeDs.setWebViewClient(new ThreeDsWebViewClient());
+        webViewThreeDs.setWebViewClient(new ThreeDsWebViewClient(requireActivity(), listener, md));
         webViewThreeDs.getSettings().setDomStorageEnabled(true);
         webViewThreeDs.getSettings().setJavaScriptEnabled(true);
         webViewThreeDs.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
-        webViewThreeDs.addJavascriptInterface(new ThreeDsJavaScriptInterface(), "JavaScriptThreeDs");
         return view;
     }
 
@@ -101,52 +93,62 @@ public class ThreeDsDialogFragment extends DialogFragment {
         }
     }
 
-    private class ThreeDsWebViewClient extends WebViewClient {
+    private static final class ThreeDsWebViewClient extends WebViewClient {
+        private final Activity activity;
+        private final ThreeDSDialogListener listener;
+        private final String md;
+        private ThreeDsWebViewClient(Activity activity, ThreeDSDialogListener listener, String md) {
+            this.activity = activity;
+            this.listener = listener;
+            this.md = md;
+        }
 
-        @Override
-        public void onPageFinished(WebView view, String url) {
-
-            if (url.toLowerCase().equals(POST_BACK_URL.toLowerCase())) {
+        @Override public void onPageFinished(WebView view, String url) {
+            if (url.equalsIgnoreCase(POST_BACK_URL)) {
                 view.setVisibility(View.GONE);
-                view.loadUrl("javascript:window.JavaScriptThreeDs.processHTML('<head>'+document.getElementsByTagName('html')[0].innerHTML+'</head>');");
+                eval(view, "JSON.parse(document.getElementsByTagName('body')[0].innerText).PaRes",
+                    new ValueCallback<String>() {
+                        @Override public void onReceiveValue(String paRes) {
+                            if (listener != null) {
+                                if (paRes == null) {
+                                    eval(view, "document.getElementsByTagName('html')[0].innerHTML",
+                                        new ValueCallback<String>() {
+                                            @Override public void onReceiveValue(String s) {
+                                                listener.onAuthorizationFailed(s);
+                                            }
+                                        }
+                                    );
+                                } else {
+                                    listener.onAuthorizationCompleted(md, paRes);
+                                }
+                            }
+                        }
+                    }
+                );
             }
         }
-    }
 
-    class ThreeDsJavaScriptInterface {
-
-        @SuppressWarnings("unused")
-        @JavascriptInterface
-        public void processHTML(final String html) {
-
-            Document doc = Jsoup.parse(html);
-            Element element = doc.select("body").first();
-
-            JsonParser parser = new JsonParser();
-            JsonObject jsonObject = parser.parse(element.ownText()).getAsJsonObject();
-            final String paRes = jsonObject.get("PaRes").getAsString();
-
-            if (paRes != null && !paRes.isEmpty()) {
-
-                if (listener != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            listener.onAuthorizationCompleted(md, paRes);
+        private void eval(WebView view, String script, ValueCallback<String> callback) {
+            view.evaluateJavascript(script, new ValueCallback<String>() {
+                @Override public void onReceiveValue(final String jsString) {
+                    String unquoted = null;
+                    try {
+                        Object parsed;
+                        if (jsString != null && !jsString.isEmpty() &&
+                            ((parsed = new JSONTokener(jsString).nextValue()) instanceof String) &&
+                            !((String) parsed).isEmpty())
+                            unquoted = (String) parsed;
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    final String finalUnquoted = unquoted;
+                    activity.runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            callback.onReceiveValue(finalUnquoted);
                         }
                     });
                 }
-            } else {
-                if (listener != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            listener.onAuthorizationFailed(html);
-                        }
-                    });
-                }
-            }
-            dismiss();
+            });
         }
     }
 
