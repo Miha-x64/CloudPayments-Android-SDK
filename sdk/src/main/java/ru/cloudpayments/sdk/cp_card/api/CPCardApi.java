@@ -50,10 +50,10 @@ public class CPCardApi {
     @Deprecated
     public void getBinInfo(
         String firstSixDigits, CompleteBinInfoListener completeListener, ErrorListener errorListener) {
-        getBinInfo(Volley.newRequestQueue(context), firstSixDigits, completeListener, errorListener);
+        getBinInfoWithVolley(Volley.newRequestQueue(context), firstSixDigits, completeListener, errorListener);
     }
     /** Get bin info using Volley. */
-    public void getBinInfo(
+    public void getBinInfoWithVolley(
         RequestQueue queue,
         String firstSixDigits, CompleteBinInfoListener completeListener, ErrorListener errorListener) {
         String url = buildUrl(firstSixDigits, errorListener);
@@ -75,7 +75,7 @@ public class CPCardApi {
         }));
     }
     /** Get bin info using OkHttp.*/
-    public Closeable getBinInfo(
+    public Closeable getBinInfoWithOkHttp(
         Call.Factory okHttp,
         String firstSixDigits, CompleteBinInfoListener completeListener, ErrorListener errorListener) {
         return getBinInfo(okHttp, new Executor() {
