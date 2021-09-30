@@ -15,8 +15,8 @@ import androidx.fragment.app.DialogFragment;
 import org.json.JSONException;
 import org.json.JSONTokener;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import static android.net.Uri.encode;
+import static ru.cloudpayments.sdk.three_ds.ThreeDs.requestBody;
 
 public class ThreeDsDialogFragment extends DialogFragment {
 
@@ -45,16 +45,7 @@ public class ThreeDsDialogFragment extends DialogFragment {
         webViewThreeDs.getSettings().setJavaScriptEnabled(true);
         webViewThreeDs.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
 
-        try {
-            String params = new StringBuilder()
-                    .append("PaReq=").append(URLEncoder.encode(paReq, "UTF-8"))
-                    .append("&MD=").append(URLEncoder.encode(md, "UTF-8"))
-                    .append("&TermUrl=").append(URLEncoder.encode(POST_BACK_URL, "UTF-8"))
-                    .toString();
-            webViewThreeDs.postUrl(acsUrl, params.getBytes());
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        webViewThreeDs.postUrl(acsUrl, requestBody(encode(paReq).getBytes(), encode(md).getBytes()));
         return webViewThreeDs;
     }
 
