@@ -2,7 +2,7 @@ package ru.cloudpayments.sdk.cp_card.api.models;
 
 import org.json.JSONObject;
 
-public class BinInfo {
+public final class BinInfo {
 
     private final JSONObject obj;
 

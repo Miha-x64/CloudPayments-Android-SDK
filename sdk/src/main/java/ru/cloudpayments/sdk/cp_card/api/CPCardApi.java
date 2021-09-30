@@ -22,7 +22,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 
-public class CPCardApi {
+public final class CPCardApi {
 
     public interface CompleteBinInfoListener {
 
