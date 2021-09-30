@@ -20,32 +20,37 @@ import static ru.cloudpayments.sdk.three_ds.ThreeDs.requestBody;
 
 public class ThreeDsDialogFragment extends DialogFragment {
 
-    static final String POST_BACK_URL = "https://demo.cloudpayments.ru/WebFormPost/GetWebViewData";
-
     private ThreeDSDialogListener listener;
 
     @Deprecated public ThreeDsDialogFragment() {
     }
 
-    public ThreeDsDialogFragment(String acsUrl, String md, String paReq, String requestKey) {
+    public ThreeDsDialogFragment(String acsUrl, String md, String paReq, String termUrl) {
         Bundle args = new Bundle(2);
-        args.putStringArray("args", new String[]{ acsUrl, md, paReq });
-        args.putString("rk", requestKey);
+        args.putStringArray("args", new String[]{ acsUrl, md, paReq, termUrl });
         setArguments(args);
     }
 
     public static ThreeDsDialogFragment newInstance(String acsUrl, String md, String paReq) {
-        return new ThreeDsDialogFragment(acsUrl, md, paReq, null);
+        return new ThreeDsDialogFragment(acsUrl, md, paReq, "https://demo.cloudpayments.ru/WebFormPost/GetWebViewData");
     }
 
-    static WebView view(Activity activity, String acsUrl, String md, String paReq, ThreeDSDialogListener listener) {
+    public ThreeDsDialogFragment fragmentResult(String requestKey) {
+        requireArguments().putString("rk", requestKey);
+        return this;
+    }
+
+    static WebView view(Activity activity, String acsUrl, String md, String paReq, String termUrl, ThreeDSDialogListener listener) {
         WebView webViewThreeDs = new WebView(activity);
-        webViewThreeDs.setWebViewClient(new ThreeDsDialogFragment.ThreeDsWebViewClient(activity, listener, md));
+        webViewThreeDs.setWebViewClient(new ThreeDsDialogFragment.ThreeDsWebViewClient(activity, listener, md, termUrl));
         webViewThreeDs.getSettings().setDomStorageEnabled(true);
         webViewThreeDs.getSettings().setJavaScriptEnabled(true);
         webViewThreeDs.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
 
-        webViewThreeDs.postUrl(acsUrl, requestBody(encode(paReq).getBytes(), encode(md).getBytes()));
+        webViewThreeDs.postUrl(
+            acsUrl,
+            requestBody(encode(paReq).getBytes(), encode(md).getBytes(), encode(termUrl).getBytes())
+        );
         return webViewThreeDs;
     }
 
@@ -56,7 +61,7 @@ public class ThreeDsDialogFragment extends DialogFragment {
         String rk = bun.getString("rk");
         return ThreeDs.dialog(
             requireActivity(),
-            args[0], args[1], args[2],
+            args[0], args[1], args[2], args[3],
             rk == null ? listener : new ThreeDSDialogListener() {
                 @Override public void onAuthorizationCompleted(String md, String paRes) {
                     deliver(md, paRes, null);
@@ -107,14 +112,16 @@ public class ThreeDsDialogFragment extends DialogFragment {
         private final Activity activity;
         private final ThreeDSDialogListener listener;
         private final String md;
-        ThreeDsWebViewClient(Activity activity, ThreeDSDialogListener listener, String md) {
+        private final String termUrl;
+        ThreeDsWebViewClient(Activity activity, ThreeDSDialogListener listener, String md, String termUrl) {
             this.activity = activity;
             this.listener = listener;
             this.md = md;
+            this.termUrl = termUrl;
         }
 
         @Override public void onPageFinished(WebView view, String url) {
-            if (url.equalsIgnoreCase(POST_BACK_URL)) {
+            if (url.equalsIgnoreCase(termUrl)) {
                 view.setVisibility(View.GONE);
                 eval(view, "JSON.parse(document.getElementsByTagName('body')[0].innerText).PaRes",
                     new ValueCallback<String>() {
