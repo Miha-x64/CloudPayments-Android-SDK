@@ -1,7 +1,6 @@
 plugins { id 'maven-publish' }
 apply plugin: 'com.android.library'
 
-def sdkVersion = '2.0.0'
 android {
     compileSdkVersion 29
 
@@ -9,7 +8,7 @@ android {
         minSdkVersion 19 // WebView#evaluateJavaScript
         targetSdkVersion 29
         versionCode 9
-        versionName sdkVersion
+        versionName '2.0.0'
     }
 
     buildTypes {
@@ -27,7 +26,6 @@ afterEvaluate {
                 from components.release
                 groupId = 'com.github.Miha-x64'
                 artifactId = 'CloudPayments-Android-SDK'
-                version = sdkVersion
             }
         }
     }
