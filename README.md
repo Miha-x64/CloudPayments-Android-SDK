@@ -7,6 +7,21 @@
 * No required dependency on Volley.
   You're free to choose whether to use Volley, OkHttp, or neither, and don't ever request bin-code data
 * Fragment result API support
+
+```groovy
+// root
+allprojects {
+    repositories {
+        ...
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+// app
+dependencies {
+    implementation 'com.github.Miha-x64:CloudPayments-Android-SDK:-SNAPSHOT' // or e9b4c2515a commit, for example
+}
+```
 ____________________
 
 CloudPayments SDK позволяет интегрировать прием платежей в мобильные приложение для платформы Android.
