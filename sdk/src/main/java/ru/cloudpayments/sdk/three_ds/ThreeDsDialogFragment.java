@@ -67,6 +67,7 @@ public class ThreeDsDialogFragment extends DialogFragment implements DialogInter
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        webView.setWebViewClient(null);
         webView = null;
     }
 
@@ -102,7 +103,10 @@ public class ThreeDsDialogFragment extends DialogFragment implements DialogInter
         }
     }
 
-    // In DialogInterface, we mind only dismiss() (which is already implemented).
+    @Override public void dismiss() {
+        super.dismissAllowingStateLoss();
+    }
+
     @Override public void cancel() {}
 
 }
