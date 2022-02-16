@@ -18,6 +18,7 @@ public class ThreeDsDialogFragment extends DialogFragment implements DialogInter
 
     protected ThreeDSDialogListener listener;
     protected WebView webView;
+    protected ThreeDs.WebViewClient client;
 
     @Deprecated public ThreeDsDialogFragment() {
     }
@@ -46,7 +47,7 @@ public class ThreeDsDialogFragment extends DialogFragment implements DialogInter
         String termUrl = args[3];
 
         Activity activity = requireActivity();
-        (webView = ThreeDs.view(activity)).setWebViewClient(new ThreeDs.WebViewClient(
+        (webView = ThreeDs.view(activity)).setWebViewClient(client = new ThreeDs.WebViewClient(
             activity, new ThreeDs.DialogFragmentResultListener(this, this, listener), md, termUrl
         ));
 
@@ -66,9 +67,10 @@ public class ThreeDsDialogFragment extends DialogFragment implements DialogInter
 
     @Override
     public void onDestroyView() {
-        super.onDestroyView();
-        webView.setWebViewClient(null);
+        client.dispose();
+        webView.setWebViewClient(client = null);
         webView = null;
+        super.onDestroyView();
     }
 
     @Override

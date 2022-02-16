@@ -52,8 +52,8 @@ public final class ThreeDs {
     }
 
     public static class WebViewClient extends android.webkit.WebViewClient {
-        private final Activity activity;
-        private final ThreeDSDialogListener listener;
+        private Activity activity;
+        private ThreeDSDialogListener listener;
         private final String md;
         private final String termUrl;
         public WebViewClient(Activity activity, ThreeDSDialogListener listener, String md, String termUrl) {
@@ -74,7 +74,9 @@ public final class ThreeDs {
                                     eval(view, "document.getElementsByTagName('html')[0].innerHTML",
                                         new ValueCallback<String>() {
                                             @Override public void onReceiveValue(String s) {
-                                                listener.onAuthorizationFailed(s);
+                                                if (listener != null) {
+                                                    listener.onAuthorizationFailed(s);
+                                                }
                                             }
                                         }
                                     );
@@ -101,13 +103,19 @@ public final class ThreeDs {
                         e.printStackTrace();
                     }
                     final String finalUnquoted = unquoted;
-                    activity.runOnUiThread(new Runnable() {
-                        @Override public void run() {
-                            callback.onReceiveValue(finalUnquoted);
-                        }
-                    });
+                    if (activity != null) {
+                        activity.runOnUiThread(new Runnable() {
+                            @Override public void run() {
+                                callback.onReceiveValue(finalUnquoted);
+                            }
+                        });
+                    }
                 }
             });
+        }
+        public void dispose() {
+            activity = null;
+            listener = null;
         }
     }
 
