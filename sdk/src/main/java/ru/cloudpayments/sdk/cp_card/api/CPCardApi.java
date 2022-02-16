@@ -120,7 +120,7 @@ public final class CPCardApi {
         };
     }
 
-    private static final String URL = "https://widget.cloudpayments.ru/Home/BinInfo?firstSixDigits=";
+    private static final String URL = "https://api.cloudpayments.ru/bins/info/";
     private String buildUrl(String firstSixDigits, ErrorListener errorListener) {
         StringBuilder sb = new StringBuilder(URL);
         char c;
